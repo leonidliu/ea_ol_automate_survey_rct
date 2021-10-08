@@ -1,0 +1,355 @@
+---
+title: "Example"
+author: "Leo Liu"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    code_folding: hide
+---
+
+Instructions:
+
+- Set up googlesheets4 with OL email address for Machete
+- Set up environment variables
+- Need python 3.6/7/8
+- Install surveygizmo wrapper https://pypi.org/project/SurveyGizmo/
+
+- pip3 install SurveyGizmo
+
+Notes to self:
+
+- Create an instructions .R
+
+- Pull JSON data using these lines: https://github.com/move-coop/parsons/blob/master/parsons/alchemer/alchemer.py#L103-L110
+- Consider pandas to convert JSON to pandas df object; alternatively, do this in R more slowly
+  - Import pandas as pdjson_normalize
+  - pd.json_normalize()
+  - pd.DataFrame.from_dict(JSON OBJECT)
+- Pull in R
+
+```{r, message = F, warning = F}
+library(tidyverse)
+library(googlesheets4)
+library(knitr)
+library(liutils)
+
+gs4_deauth()
+
+# machete_id <- "1nr4VNp9h7SLIixQWrhkS_opVaxCS3mE9F2RmNha5ywc"
+# machete_sheet <- "National ATEs - KFP"
+```
+
+```{r}
+# library(reticulate)
+
+# Sys.setenv(RETICULATE_PYTHON = "/Library/Frameworks/Python.framework/Versions/3.9/bin/python3")
+# py_available(initialize=TRUE)
+# py_available()
+# py_discover_config()
+# py_config()
+# py_module_available("surveygizmo")
+
+# api_token <- "186f93f71badc7f58fd349d3dcaca8b426974ef7a39131e162"
+# api_secret <- "A9db0fQYULp/I"
+# survey_id <- "6555071"
+```
+
+```{python}
+# from surveygizmo import SurveyGizmo
+# import pandas as pd
+# 
+# # Initialize Alchemer connection
+# sg = SurveyGizmo(
+#     api_version = 'v5',
+#     api_token = r.api_token,
+#     api_token_secret = r.api_secret
+# )
+# 
+# # Get first page of survey response data
+# response = sg.api.surveyresponse.list(r.survey_id, page = 0)
+# 
+# # Print total number of responses
+# print(response['total_count'])
+# 
+# # Extract data
+# data = response['data']
+# 
+# # Loop to add remaining pages
+# while response['page'] < response['total_pages']:
+#     response = sg.api.surveyresponse.list(r.survey_id, page = (response['page'] + 1))
+#     data.extend(response['data'])
+# 
+# # Convert from JSON to dataframe
+# x = pd.json_normalize(data)
+# y = pd.DataFrame.from_dict(data)
+```
+
+```{r}
+
+dv_id <- "18wnfE_kjmUnoiVJefzHzDoHJZ7-iexWosEu8R-8eIxg"
+dv_sheet <- "Raw DV Variable Names"
+formula_sheet <- "Formulas"
+ivs <- c("treatment_openlabs", "potus_trump_biden_voted",
+         "potus2016_votechoice_recall4", 
+         "ideology_web_randomized", "age", "education_2", 
+         "partisanship_web2", "race_civis2_web", "gss_spanking_randomized", 
+         "gss_spanking_randomized", "gender")
+
+df <- read_csv("data/sept23_bbt_repl.csv")
+
+dvs <- read_sheet(dv_id, dv_sheet) %>%
+  mutate(included = raw_var %in% names(df) & raw_var_push %in% names(df)) %>%
+  select(-old_dv_name)
+dvs %>% kable()
+
+dvs <- dvs %>% filter(included)
+
+formulas <- read_sheet(dv_id, formula_sheet) %>%
+  right_join(dvs, by = "dv_name") %>%
+  select(dv_name, rhs_formula)
+formulas %>% kable()
+
+df <- df %>%
+  select(`Response ID`, 
+         Status, 
+         all_of(ivs), 
+         all_of(dvs$raw_var), 
+         all_of(dvs$raw_var_push)) %>%
+  mutate(across(potus_trump_biden_voted,
+                ~case_when(. == "3 - Libertarian Jo Jorgensen" ~ "other",
+                           . == "4 - Green Party Candidate Howie Hawkins" ~ "other",
+                           . == "5 - Someone else" ~ "other",
+                           TRUE ~ potus_trump_biden_voted))) %>%
+  filter(!is.na(potus_trump_biden_voted)) %>%
+  mutate(treatment_openlabs = relevel(as.factor(treatment_openlabs),
+                                      'control'))
+
+
+if ("dv_biden_app" %in% dvs$dv_name) {
+  
+  df <- df %>%
+    mutate(across(c(approval_biden_20210205_dv,
+                    approval_biden_20210205_dv_push),
+                  list(`recoded` = 
+                         ~case_when(substr(., 1, 1) == "1" ~ 1,
+                                    substr(., 1, 1) == "2" ~ 1,
+                                    substr(., 1, 1) == "3" ~ 0,
+                                    substr(., 1, 1) == "4" ~ 0,
+                                    TRUE ~ NA_real_)))) %>%
+    mutate(dv_biden_app = 
+             coalesce(approval_biden_20210205_dv_recoded,
+                      approval_biden_20210205_dv_push_recoded)) %>%
+    select(-ends_with("recoded"))
+  
+}
+
+if ("dv_biden_app_covid" %in% dvs$dv_name) {
+  
+  df <- df %>%
+    mutate(across(c(approval_covid_biden_20210205_dv,
+                    approval_covid_biden_20210205_dv_push),
+                  list(`recoded` = 
+                         ~case_when(substr(., 1, 1) == "1" ~ 1,
+                                    substr(., 1, 1) == "2" ~ 1,
+                                    substr(., 1, 1) == "3" ~ 0,
+                                    substr(., 1, 1) == "4" ~ 0,
+                                    TRUE ~ NA_real_)))) %>%
+    mutate(dv_biden_app_covid = 
+             coalesce(approval_covid_biden_20210205_dv_recoded,
+                      approval_covid_biden_20210205_dv_push_recoded)) %>%
+    select(-ends_with("recoded"))
+  
+}
+
+if ("dv_biden_app_econ" %in% dvs$dv_name) {
+  
+  df <- df %>%
+    mutate(across(c(approval_econ_biden_20210205_dv,
+                    approval_econ_biden_20210205_dv_push),
+                  list(`recoded` = 
+                         ~case_when(substr(., 1, 1) == "1" ~ 1,
+                                    substr(., 1, 1) == "2" ~ 1,
+                                    substr(., 1, 1) == "3" ~ 0,
+                                    substr(., 1, 1) == "4" ~ 0,
+                                    TRUE ~ NA_real_)))) %>%
+    mutate(dv_biden_app_econ = 
+             coalesce(approval_econ_biden_20210205_dv_recoded,
+                      approval_econ_biden_20210205_dv_push_recoded)) %>%
+    select(-ends_with("recoded"))
+  
+}
+
+if ("dv_biden_fav" %in% dvs$dv_name) {
+  
+  df <- df %>%
+    mutate(across(c(fav_biden_20210205_dv,
+                    fav_biden_20210205_dv_push),
+                  list(`recoded` = 
+                         ~case_when(substr(., 1, 1) == "1" ~ 1,
+                                    substr(., 1, 1) == "2" ~ 1,
+                                    substr(., 1, 1) == "3" ~ 0,
+                                    substr(., 1, 1) == "4" ~ 0,
+                                    TRUE ~ NA_real_)))) %>%
+    mutate(dv_biden_fav = 
+             coalesce(fav_biden_20210205_dv_recoded,
+                      fav_biden_20210205_dv_push_recoded)) %>%
+    select(-ends_with("recoded"))
+  
+}
+
+if ("dv_hr_2024" %in% dvs$dv_name) {
+  
+  df <- df %>%
+    mutate(across(c(hr_pres_2024_biden_generic_20210205_dv,
+                    hr_pres_2024_biden_generic_20210205_dv_push),
+                  list(`recoded` = 
+                         ~case_when(substr(., 1, 1) == "1" ~ 1,
+                                    substr(., 1, 1) == "2" ~ 0,
+                                    TRUE ~ NA_real_)))) %>%
+    mutate(dv_hr_2024 = 
+             coalesce(hr_pres_2024_biden_generic_20210205_dv_recoded,
+                      hr_pres_2024_biden_generic_20210205_dv_push_recoded)) %>%
+    select(-ends_with("recoded"))
+  
+}
+
+if ("dv_hr_house_combined" %in% dvs$dv_name) {
+  
+  df <- df %>%
+    mutate(across(c(hr_house_2022_generic_matchup_20210425_dv,
+                    hr_house_2022_generic_matchup_20210425_dv_push),
+                  list(`recoded` = 
+                         ~case_when(substr(., 1, 1) == "1" ~ 1,
+                                    substr(., 1, 1) == "2" ~ 0,
+                                    TRUE ~ NA_real_)))) %>%
+    mutate(dv_hr_house_combined = 
+             coalesce(hr_house_2022_generic_matchup_20210425_dv_recoded,
+                      hr_house_2022_generic_matchup_20210425_dv_push_recoded)) %>%
+    select(-ends_with("recoded"))
+  
+}
+
+if ("dv_rep_unfav" %in% dvs$dv_name) {
+  
+  df <- df %>%
+    mutate(across(c(fav_rep_party_20210205_dv,
+                    fav_rep_party_20210205_dv_push),
+                  list(`recoded` = 
+                         ~case_when(substr(., 1, 1) == "1" ~ 0,
+                                    substr(., 1, 1) == "2" ~ 0,
+                                    substr(., 1, 1) == "3" ~ 1,
+                                    substr(., 1, 1) == "4" ~ 1,
+                                    TRUE ~ NA_real_)))) %>%
+    mutate(dv_rep_unfav = 
+             coalesce(fav_rep_party_20210205_dv_recoded,
+                      fav_rep_party_20210205_dv_push_recoded)) %>%
+    select(-ends_with("recoded"))
+  
+}
+
+if ("dv_dem_fav" %in% dvs$dv_name) {
+  
+  df <- df %>%
+    mutate(across(c(fav_dem_party_20210205_dv,
+                    fav_dem_party_20210205_dv_push),
+                  list(`recoded` = 
+                         ~case_when(substr(., 1, 1) == "1" ~ 1,
+                                    substr(., 1, 1) == "2" ~ 1,
+                                    substr(., 1, 1) == "3" ~ 0,
+                                    substr(., 1, 1) == "4" ~ 0,
+                                    TRUE ~ NA_real_)))) %>%
+    mutate(dv_dem_fav = 
+             coalesce(fav_dem_party_20210205_dv_recoded,
+                      fav_dem_party_20210205_dv_push_recoded)) %>%
+    select(-ends_with("recoded"))
+  
+}
+
+if ("dv_ajp_support" %in% dvs$dv_name) {
+  
+  df <- df %>%
+    mutate(across(c(support_ajp_092821_dv,
+                    support_ajp_092821_dv_push),
+                  list(`recoded` = 
+                         ~case_when(substr(., 1, 1) == "1" ~ 1,
+                                    substr(., 1, 1) == "2" ~ 1,
+                                    substr(., 1, 1) == "3" ~ 0,
+                                    substr(., 1, 1) == "4" ~ 0,
+                                    TRUE ~ NA_real_)))) %>%
+    mutate(dv_ajp_support = 
+             coalesce(support_ajp_092821_dv_recoded,
+                      support_ajp_092821_dv_push_recoded)) %>%
+    select(-ends_with("recoded"))
+  
+}
+
+if ("dv_conf_inst" %in% dvs$dv_name) {
+  
+  df <- df %>%
+    mutate(across(c(bbt_institutions_090221_dv,
+                    bbt_institutions_090221_dv_push),
+                  list(`recoded` = 
+                         ~case_when(substr(., 1, 1) == "1" ~ 1,
+                                    substr(., 1, 1) == "2" ~ 0,
+                                    substr(., 1, 1) == "3" ~ 0,
+                                    substr(., 1, 1) == "4" ~ 0,
+                                    TRUE ~ NA_real_)))) %>%
+    mutate(dv_conf_inst = 
+             coalesce(bbt_institutions_090221_dv_recoded,
+                      bbt_institutions_090221_dv_push_recoded)) %>%
+    select(-ends_with("recoded"))
+  
+}
+
+if ("dv_soc_trust" %in% dvs$dv_name) {
+  
+  df <- df %>%
+    mutate(across(c(bbt_social_trust_090221_dv,
+                    bbt_social_trust_090221_dv_push),
+                  list(`recoded` = 
+                         ~case_when(substr(., 1, 1) == "1" ~ 1,
+                                    substr(., 1, 1) == "2" ~ 1,
+                                    substr(., 1, 1) == "4" ~ 0,
+                                    substr(., 1, 1) == "5" ~ 0,
+                                    TRUE ~ NA_real_)))) %>%
+    mutate(dv_soc_trust = 
+             coalesce(bbt_social_trust_090221_dv_recoded,
+                      bbt_social_trust_090221_dv_push_recoded)) %>%
+    select(-ends_with("recoded"))
+  
+}
+
+analysis <- df %>%
+  pivot_longer(starts_with("dv"), 
+               names_to = "dv_name",
+               values_to = "dv_value") %>%
+  filter(!is.na(dv_value)) %>%
+  group_by(dv_name) %>%
+  nest() %>%
+  left_join(formulas, by = "dv_name") %>%
+  mutate(gam_formula = paste("dv_value", rhs_formula),
+         gam_formula = list(as.formula(gam_formula))) %>%
+  select(-rhs_formula) %>%
+  mutate(gam_fit = map2(gam_formula, data, ~mgcv::gam(.x, data = .y))) %>%
+  mutate(data = map2(data, gam_fit, ~mutate(.x, pred = predict(.y, .x)))) %>%
+  mutate(lm_formula = "dv_value ~ treatment_openlabs + pred",
+         lm_formula = list(as.formula(lm_formula))) %>%
+  mutate(lm_fit = map2(lm_formula, data, ~lm(.x, data = .y))) %>%
+  mutate(margins = map2(lm_fit, data, ~summary(margins::margins(.x, .y, "treatment_openlabs")))) %>%
+  mutate(glanced = map(lm_fit, broom::glance)) %>%
+  unnest(c(margins, glanced)) %>%
+  select(dv_name, factor, AME, SE, p, adj.r.squared, nobs) %>%
+  mutate(across(where(is.numeric), round, 3))
+```
+
+# Results
+
+```{r}
+analysis %>% kable()
+```
+
+# Appendix: Recoding Checks
+
+```{r}
+check_na(df)
+```
