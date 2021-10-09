@@ -1,6 +1,6 @@
 ---
 title: "Auto-Generated Results"
-author: "OpenLabs"
+author: "OpenLabs and Empower Analytics"
 date: "`r format(Sys.time(), '%B %d, %Y, %I:%M %p')`"
 output: 
   html_document:
@@ -14,12 +14,6 @@ params:
   download_data: !r NULL
   delete_data: !r NULL
 ---
-
-Next Steps:
-
-- Create a render script that captures inputs and knits
-- Set up googlesheets4 with OL email address for Machete
-- Create instructions for use
 
 ```{r, message = F, warning = F}
 library(tidyverse)

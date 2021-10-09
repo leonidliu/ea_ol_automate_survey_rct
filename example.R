@@ -1,16 +1,16 @@
 # ---------- CONFIG ----------
 
 # (string) Title of the automated report
-title <- ""
+title <- "9/23/21 West Virginia Ad Testing"
 
 # (integer) Alchemer survey ID
-survey_id <- 12345
+survey_id <- 6555071
 
 # (string) Path to data, where data is placed if downloading from Alchemer
-data_path <- ""
+data_path <- "data/6555071.csv"
 
 # (boolean) Download data from Alchemer?
-download_data <- F
+download_data <- T
 
 # (boolean) Delete data afterward?
 delete_data <- F
