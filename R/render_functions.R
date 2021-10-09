@@ -1,5 +1,4 @@
-render_report <- function(script_path,
-                          output_dir = NULL,
+render_report <- function(output_dir = "reports",
                           title = "",
                           survey_id,
                           data_path,
@@ -14,7 +13,7 @@ render_report <- function(script_path,
 
   tryCatch(
     expr = {
-      rmarkdown::render(script_path,
+      rmarkdown::render("R/auto_results_generator.Rmd",
                         output_file = filename,
                         output_dir = output_dir,
                         knit_root_dir = "..",
