@@ -1,5 +1,8 @@
 # ---------- CONFIG ----------
 
+# (string) Set working directory (include ea_ol_automate_survey_rct)
+setwd("/ea_ol_automate_survey_rct/")
+
 # (string) Title of the automated report
 title <- "9/23/21 West Virginia Ad Testing"
 

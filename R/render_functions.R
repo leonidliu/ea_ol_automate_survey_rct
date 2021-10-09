@@ -27,9 +27,6 @@ render_report <- function(output_dir = "reports",
     },
     error = function(e){
       print(paste("error with", filename))
-    },
-    warning = function(w){
-      print(paste("warning with", filename))
     }
   )
 }

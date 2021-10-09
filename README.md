@@ -5,5 +5,5 @@
 1. Run `install_packages.R` to make sure all required packages are installed
 2. Edit and run `main.R`
 
-If helpful, you can try running `example.R` - the only you need to add
-is Alchemer API keys.
+If helpful, you can try running `example.R` - you'll only need to set
+the working directory and add your Alchemer API keys.
