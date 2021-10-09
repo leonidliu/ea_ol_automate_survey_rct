@@ -5,11 +5,19 @@ date: "`r format(Sys.time(), '%B %d, %Y, %I:%M %p')`"
 output: 
   html_document:
     code_folding: hide
+params:
+  title: !r NULL
+  survey_id: !r NULL
+  api_token: !r NULL
+  api_secret: !r NULL
+  data_path: !r NULL
+  download_data: !r NULL
+  delete_data: !r NULL
 ---
 
 Next Steps:
 
-- Create config
+- Create a render script that captures inputs and knits
 - Set up googlesheets4 with OL email address for Machete
 - Create instructions for use
 
@@ -17,20 +25,20 @@ Next Steps:
 library(tidyverse)
 library(googlesheets4)
 library(Rsurveygizmo)
-library(margins)
+library(kableExtra)
 library(liutils)
+library(margins)
 library(knitr)
 library(broom)
 library(mgcv)
-library(kableExtra)
 
-title <- "9/23 West Virginia Test"
-survey_id <- 6555071
-api_token <- "186f93f71badc7f58fd349d3dcaca8b426974ef7a39131e162"
-api_secret <- "A9db0fQYULp/I"
-data_path <- "data/wv.csv"
-download_data <- F
-delete_data <- F
+title <- params$title
+survey_id <- params$survey_id
+api_token <- params$api_token
+api_secret <- params$api_secret
+data_path <- params$data_path
+download_data <- params$download_data
+delete_data <- params$delete_data
 
 dv_id <- "18wnfE_kjmUnoiVJefzHzDoHJZ7-iexWosEu8R-8eIxg"
 dv_sheet <- "Raw DV Variable Names"
