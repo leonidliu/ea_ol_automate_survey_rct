@@ -74,7 +74,7 @@ formulas <- read_sheet(dv_id, formula_sheet) %>%
 
 ```{r}
 df <- df %>%
-  select(id, 
+  select(one_of("id", "response_id"), 
          status, 
          all_of(ivs), 
          all_of(dvs$raw_var), 
