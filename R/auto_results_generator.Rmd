@@ -25,6 +25,10 @@ library(margins)
 library(knitr)
 library(broom)
 library(mgcv)
+library(tictoc)
+
+# Start script timer
+tic()
 
 title <- params$title
 survey_id <- params$survey_id
@@ -373,4 +377,10 @@ glimpse(df)
 
 ```{r}
 if (delete_data) file.remove(data_path)
+```
+
+## (Internal) Script timer
+
+```{r}
+toc()
 ```
