@@ -66,14 +66,16 @@ df <- read_csv(data_path) %>%
 
 dvs <- read_sheet(dv_id, dv_sheet) %>%
   mutate(detected = raw_var %in% names(df) & raw_var_push %in% names(df)) %>%
-  select(-old_dv_name)
+  select(-old_dv_name) %>%
+  arrange(dv_name)
 dvs_raw <- dvs
 
 dvs <- dvs %>% filter(detected)
 
 formulas <- read_sheet(dv_id, formula_sheet) %>%
   right_join(dvs, by = "dv_name") %>%
-  select(dv_name, rhs_formula)
+  select(dv_name, rhs_formula) %>%
+  arrange(dv_name)
 ```
 
 ```{r}
@@ -306,7 +308,8 @@ analysis <- df %>%
   mutate(glanced = map(lm_fit, glance)) %>%
   unnest(c(margins, glanced)) %>%
   select(dv_name, factor, AME, SE, p, adj_rsq = adj.r.squared, n = nobs) %>%
-  mutate(across(where(is.numeric), round, 3))
+  mutate(across(where(is.numeric), round, 3)) %>%
+  arrange(dv_name, factor)
 ```
 
 `r title`
