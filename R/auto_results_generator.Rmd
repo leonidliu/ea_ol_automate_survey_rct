@@ -61,8 +61,11 @@ if (download_data) {
 
 df <- read_csv(data_path) %>% 
   rename_with(tolower) %>%
-  rename_with(snake_case) %>%
-  filter(istestdata == 0)
+  rename_with(snake_case)
+
+if ("istestdata" %in% names(df)) {
+  df <- df %>% filter(istestdata == 0)
+}
 
 dvs <- read_sheet(dv_id, dv_sheet) %>%
   mutate(detected = raw_var %in% names(df) & raw_var_push %in% names(df)) %>%
@@ -286,7 +289,9 @@ if ("dv_soc_trust" %in% dvs$dv_name) {
     select(-ends_with("recoded"))
   
 }
+```
 
+```{r}
 analysis <- df %>%
   pivot_longer(starts_with("dv"), 
                names_to = "dv_name",
