@@ -49,8 +49,7 @@ ivs <- c("treatment_openlabs", "potus_trump_biden_voted",
 gs4_deauth()
 
 if (download_data) {
-  pullsg(survey_id, api_token, api_secret,
-         completes_only = F) %>%
+  pullsg(survey_id, api_token, api_secret, completes_only = F) %>%
     mutate(survey_id = survey_id) %>%
     relocate(survey_id) %>%
     write_csv(data_path)
@@ -58,7 +57,8 @@ if (download_data) {
 
 df <- read_csv(data_path) %>% 
   rename_with(tolower) %>%
-  rename_with(snake_case)
+  rename_with(snake_case) %>%
+  filter(istestdata == 0)
 
 dvs <- read_sheet(dv_id, dv_sheet) %>%
   mutate(detected = raw_var %in% names(df) & raw_var_push %in% names(df)) %>%
