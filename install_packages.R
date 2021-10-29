@@ -7,3 +7,6 @@ install.packages("margins")
 install.packages("broom")
 install.packages("mgcv")
 install.packages("rmarkdown")
+install.packages("kableExtra")
+install.packages("tictoc")
+# install.packages("tidyverse)  # if not already installed
