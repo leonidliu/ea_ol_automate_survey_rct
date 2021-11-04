@@ -23,7 +23,8 @@ render_report <- function(output_dir = "reports",
                                       api_secret = api_secret,
                                       data_path = data_path,
                                       download_data = download_data,
-                                      delete_data = delete_data))
+                                      delete_data = delete_data,
+                                      output_dir = output_dir))
     },
     error = function(e){
       print(paste("error with", filename))

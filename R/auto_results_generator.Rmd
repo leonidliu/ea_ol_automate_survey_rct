@@ -13,6 +13,7 @@ params:
   data_path: !r NULL
   download_data: !r NULL
   delete_data: !r NULL
+  output_dir: !r NULL
 ---
 
 ```{r, message = F, warning = F}
@@ -37,6 +38,7 @@ api_secret <- params$api_secret
 data_path <- params$data_path
 download_data <- params$download_data
 delete_data <- params$delete_data
+output_dir <- params$output_dir
 
 dv_id <- "18wnfE_kjmUnoiVJefzHzDoHJZ7-iexWosEu8R-8eIxg"
 dv_sheet <- "Raw DV Variable Names"
@@ -315,6 +317,9 @@ analysis <- df %>%
   select(dv_name, factor, AME, SE, p, adj_rsq = adj.r.squared, n = nobs) %>%
   mutate(across(where(is.numeric), round, 3)) %>%
   arrange(dv_name, factor)
+
+# Write CSV
+write_csv(analysis, file.path(output_dir, paste0(survey_id, ".csv")))
 ```
 
 `r title`
