@@ -49,9 +49,6 @@ ivs <- c("treatment_openlabs", "potus_trump_biden_voted",
          "partisanship_web2", "race_civis2_web", "gss_spanking_randomized", 
          "gss_spanking_randomized", "gender")
 
-# machete_id <- "1nr4VNp9h7SLIixQWrhkS_opVaxCS3mE9F2RmNha5ywc"
-# machete_sheet <- "National ATEs - KFP"
-
 gs4_deauth()
 
 if (download_data) {
@@ -96,7 +93,7 @@ df <- df %>%
                            . == "5 - Someone else" ~ "other",
                            TRUE ~ potus_trump_biden_voted))) %>%
   filter(!is.na(potus_trump_biden_voted)) %>%
-  mutate(treatment_openlabs = relevel(as.factor(treatment_openlabs), 'control'))
+  mutate(treatment_openlabs = relevel(as.factor(treatment_openlabs), "control"))
 
 if ("dv_biden_app" %in% dvs$dv_name) {
   
@@ -288,6 +285,43 @@ if ("dv_soc_trust" %in% dvs$dv_name) {
     mutate(dv_soc_trust = 
              coalesce(bbt_social_trust_090221_dv_recoded,
                       bbt_social_trust_090221_dv_push_recoded)) %>%
+    select(-ends_with("recoded"))
+  
+}
+
+if ("dv_party_trust_dem" %in% dvs$dv_name) {
+  
+  df <- df %>%
+    mutate(across(c(democracy_better_0512,
+                    democracy_better_0512_push), 
+                  tolower)) %>%
+    mutate(across(c(democracy_better_0512,
+                    democracy_better_0512_push), 
+                  list(`recoded` =
+                         ~case_when(grepl("democrat", .) ~ 1,
+                                    grepl("republican", .) ~ 0,
+                                    TRUE ~ NA_real_)))) %>%
+    mutate(dv_party_trust_dem =
+             coalesce(democracy_better_0512_recoded,
+                      democracy_better_0512_push_recoded)) %>%
+    select(-ends_with("recoded"))
+  
+}
+
+if ("dv_voting_rights" %in% dvs$dv_name) {
+  
+  df <- df %>%
+    mutate(across(c(voting_rights_20211231_dv,
+                    voting_rights_20211231_dv_push),
+                  list(`recoded` =
+                         ~case_when(. == "Strongly support" ~ 1,
+                                    . == "Somewhat support" ~ 1,
+                                    . == "Somewhat oppose" ~ 0,
+                                    . == "Strongly oppose" ~ 0,
+                                    TRUE ~ NA_real_)))) %>%
+    mutate(dv_voting_rights =
+             coalesce(voting_rights_20211231_dv_recoded,
+                      voting_rights_20211231_dv_push_recoded)) %>%
     select(-ends_with("recoded"))
   
 }
