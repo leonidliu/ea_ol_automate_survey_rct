@@ -314,14 +314,50 @@ if ("dv_voting_rights" %in% dvs$dv_name) {
     mutate(across(c(voting_rights_20211231_dv,
                     voting_rights_20211231_dv_push),
                   list(`recoded` =
-                         ~case_when(. == "Strongly support" ~ 1,
-                                    . == "Somewhat support" ~ 1,
-                                    . == "Somewhat oppose" ~ 0,
-                                    . == "Strongly oppose" ~ 0,
+                         ~case_when(grepl("Strongly support", .) ~ 1,
+                                    grepl("Somewhat support", .) ~ 1,
+                                    grepl("Somewhat oppose", .) ~ 0,
+                                    grepl("Strongly oppose", .) ~ 0,
                                     TRUE ~ NA_real_)))) %>%
     mutate(dv_voting_rights =
              coalesce(voting_rights_20211231_dv_recoded,
                       voting_rights_20211231_dv_push_recoded)) %>%
+    select(-ends_with("recoded"))
+  
+}
+
+if ("dv_filibuster" %in% dvs$dv_name) {
+  
+  df <- df %>%
+    mutate(across(c(filibuster_20220108_dv,
+                    filibuster_20220108_dv_push),
+                  list(`recoded` = 
+                         ~case_when(substr(., 1, 1) == "1" ~ 1,
+                                    substr(., 1, 1) == "2" ~ 1,
+                                    substr(., 1, 1) == "3" ~ 0,
+                                    substr(., 1, 1) == "4" ~ 0,
+                                    TRUE ~ NA_real_)))) %>%
+    mutate(dv_voting_rights =
+             coalesce(filibuster_20220108_dv_recoded,
+                      filibuster_20220108_dv_push_recoded)) %>%
+    select(-ends_with("recoded"))
+  
+}
+
+if ("dv_clean_energy" %in% dvs$dv_name) {
+  
+  df <- df %>%
+    mutate(across(c(clean_energy_06102021_dv,
+                    clean_energy_06102021_dv_push),
+                  list(`recoded` = 
+                         ~case_when(substr(., 1, 1) == "1" ~ 1,
+                                    substr(., 1, 1) == "2" ~ 1,
+                                    substr(., 1, 1) == "3" ~ 0,
+                                    substr(., 1, 1) == "4" ~ 0,
+                                    TRUE ~ NA_real_)))) %>%
+    mutate(dv_clean_energy =
+             coalesce(clean_energy_06102021_dv_recoded,
+                      clean_energy_06102021_dv_push_recoded)) %>%
     select(-ends_with("recoded"))
   
 }
