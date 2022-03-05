@@ -361,6 +361,24 @@ if ("dv_clean_energy" %in% dvs$dv_name) {
     select(-ends_with("recoded"))
   
 }
+
+if ("dv_generic_cong_ballot" %in% dvs$dv_name) {
+  
+  df <- df %>%
+    mutate(across(c(generic_congressional_ballot_20220304_dv,
+                    generic_congressional_ballot_20220304_dv_push),
+                  list(`recoded` = 
+                         ~case_when(substr(., 1, 1) == "1" ~ 1,
+                                    substr(., 1, 1) == "2" ~ 0,
+                                    substr(., 1, 1) == "3" ~ 0,
+                                    substr(., 1, 1) == "4" ~ 0,
+                                    TRUE ~ NA_real_)))) %>%
+    mutate(dv_generic_cong_ballot =
+             coalesce(generic_congressional_ballot_20220304_dv_recoded,
+                      generic_congressional_ballot_20220304_dv_push_recoded)) %>%
+    select(-ends_with("recoded"))
+  
+}
 ```
 
 ```{r}
