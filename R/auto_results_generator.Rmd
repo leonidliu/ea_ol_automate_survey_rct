@@ -67,12 +67,16 @@ if ("istestdata" %in% names(df)) {
 }
 
 dvs <- read_sheet(dv_id, dv_sheet) %>%
-  mutate(detected = raw_var %in% names(df) & raw_var_push %in% names(df)) %>%
+  mutate(detected = raw_var %in% names(df) & 
+           (raw_var_push %in% names(df)) | is.na(raw_var_push)) %>%
   select(-old_dv_name) %>%
   arrange(dv_name)
 dvs_raw <- dvs
 
 dvs <- dvs %>% filter(detected)
+
+dvs_raw_var <- dvs$raw_var[!is.na(dvs$raw_var)]
+dvs_raw_var_push <- dvs$raw_var_push[!is.na(dvs$raw_var_push)]
 
 formulas <- read_sheet(dv_id, formula_sheet) %>%
   right_join(dvs, by = "dv_name") %>%
@@ -85,8 +89,8 @@ df <- df %>%
   select(one_of("id", "response_id"), 
          status, 
          all_of(ivs), 
-         all_of(dvs$raw_var), 
-         all_of(dvs$raw_var_push)) %>%
+         all_of(dvs_raw_var), 
+         all_of(dvs_raw_var_push)) %>%
   mutate(across(potus_trump_biden_voted,
                 ~case_when(. == "3 - Libertarian Jo Jorgensen" ~ "other",
                            . == "4 - Green Party Candidate Howie Hawkins" ~ "other",
@@ -379,6 +383,38 @@ if ("dv_generic_cong_ballot" %in% dvs$dv_name) {
     select(-ends_with("recoded"))
   
 }
+
+if ("dv_confirm_jackson" %in% dvs$dv_name) {
+  
+  df <- df %>%
+    mutate(across(c(confirm_jackson_20220321_dv,
+                    confirm_jackson_20220321_dv_push),
+                  list(`recoded` = 
+                         ~case_when(substr(., 1, 1) == "1" ~ 1,
+                                    substr(., 1, 1) == "2" ~ 1,
+                                    substr(., 1, 1) == "3" ~ 0,
+                                    substr(., 1, 1) == "4" ~ 0,
+                                    TRUE ~ NA_real_)))) %>%
+    mutate(dv_confirm_jackson =
+             coalesce(confirm_jackson_20220321_dv_recoded,
+                      confirm_jackson_20220321_dv_push_recoded)) %>%
+    select(-ends_with("recoded"))
+  
+}
+
+if ("dv_jackson_qualified" %in% dvs$dv_name) {
+  
+  df <- df %>%
+    mutate(dv_jackson_qualified = 
+             case_when(substr(judge_jackson_qualified_20220321_dv, 1, 1) == "1" ~ 1,
+                       substr(judge_jackson_qualified_20220321_dv, 1, 1) == "2" ~ 1,
+                       substr(judge_jackson_qualified_20220321_dv, 1, 1) == "3" ~ 0,
+                       substr(judge_jackson_qualified_20220321_dv, 1, 1) == "4" ~ 0,
+                       substr(judge_jackson_qualified_20220321_dv, 1, 1) == "5" ~ 0,
+                       TRUE ~ NA_real_))
+  
+}
+
 ```
 
 ```{r}
