@@ -41,8 +41,7 @@ delete_data <- params$delete_data
 output_dir <- params$output_dir
 
 dv_id <- "18wnfE_kjmUnoiVJefzHzDoHJZ7-iexWosEu8R-8eIxg"
-dv_sheet <- "Raw DV Variable Names"
-formula_sheet <- "Formulas"
+dv_sheet <- "DVs"
 ivs <- c("treatment_openlabs", "potus_trump_biden_voted",
          "potus2016_votechoice_recall4", 
          "ideology_web_randomized", "age", "education_2", 
@@ -67,9 +66,9 @@ if ("istestdata" %in% names(df)) {
 }
 
 dvs <- read_sheet(dv_id, dv_sheet) %>%
+  select(dv_name:rhs_formula) %>%
   mutate(detected = raw_var %in% names(df) & 
            (raw_var_push %in% names(df) | is.na(raw_var_push))) %>%
-  select(-old_dv_name) %>%
   arrange(dv_name)
 dvs_raw <- dvs
 
@@ -78,8 +77,7 @@ dvs <- dvs %>% filter(detected)
 dvs_raw_var <- dvs$raw_var[!is.na(dvs$raw_var)]
 dvs_raw_var_push <- dvs$raw_var_push[!is.na(dvs$raw_var_push)]
 
-formulas <- read_sheet(dv_id, formula_sheet) %>%
-  right_join(dvs, by = "dv_name") %>%
+formulas <- dvs %>%
   select(dv_name, rhs_formula) %>%
   arrange(dv_name)
 ```
@@ -471,7 +469,10 @@ write_csv(analysis, file.path(output_dir, paste0(survey_id, ".csv")))
 # Detected DVs
 
 ```{r}
-dvs_raw %>% kable() %>% kable_styling(full_width = TRUE)
+dvs_raw %>% 
+  select(dv_name:raw_var_push, detected) %>%
+  kable() %>% 
+  kable_styling(full_width = TRUE)
 ```
 
 # Results
