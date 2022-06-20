@@ -47,7 +47,7 @@ ivs <- c("treatment_openlabs", "potus_trump_biden_voted",
          "ideology_web_randomized", "age", "education_2", 
          "partisanship_web2", "race_civis2_web", "gss_bible",
          "gss_spanking_randomized", "gun_in_house", 
-         "politics_personal_identity", "primary_party_vote_2022")
+         "politics_personal_identity")
 
 gs4_deauth()
 
@@ -471,6 +471,8 @@ analysis <- df %>%
   mutate(glanced = map(lm_fit, glance)) %>%
   unnest(c(margins, glanced)) %>%
   select(subset_name, dv_name, factor, AME, SE, p, adj_rsq = adj.r.squared, n = nobs) %>%
+  mutate(subset_name = gsub("subset_", "", subset_name)) %>%
+  mutate(factor = gsub("treatment_openlabs", "", factor)) %>%
   mutate(across(where(is.numeric), round, 3)) %>%
   arrange(subset_name, dv_name, factor) %>%
   ungroup()
